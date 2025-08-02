@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js",
+    "start": "node src/index.js"
     "seed": "node prisma/seed.js"
   },
   "author": "Your Name",
