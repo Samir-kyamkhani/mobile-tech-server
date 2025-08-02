@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String    @id @unique @default(uuid())
+  name       String
+  email      String    @unique
+  password   String? // Hashed password
+  role       Role      @default(Customer)
+  status     Status
+  phone      String?
+  location   String?
+  totalSpent Decimal   @default(0.00)
+  joinDate   DateTime  @default(now())
+  avatar     String?
+  createdAt  DateTime  @default(now())
+  lastLogin  DateTime?
+
+  token            String?
+  resetTokenExpiry DateTime?
+
+  createdCategories Category[] @relation("CreatedCategories")
+  createdProducts   Product[]  @relation("CreatedProducts")
+  createdOrders     Order[]    @relation("CreatedOrders")
+  customerOrders    Order[]    @relation("CustomerOrders")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  sku         String    @unique
+  description String?
+  image       String?
+  createdby   String
+  creator     User      @relation("CreatedCategories", fields: [createdby], references: [id])
+  products    Product[]
+}
+
+model Product {
+  id          String         @id @default(uuid())
+  name        String
+  description String         @default("")
+  category    Category       @relation(fields: [categoryid], references: [id])
+  categoryid  String
+  price       Decimal
+  stock       Int
+  status      ProductStatus
+  images      ProductImage[] // Relation
+  createdby   String
+  creator     User           @relation("CreatedProducts", fields: [createdby], references: [id])
+  orderItems  OrderItem[]
+}
+
+model ProductImage {
+  id        String  @id @default(uuid())
+  url       String
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id         String          @id @default(uuid())
+  customer   User            @relation("CustomerOrders", fields: [customerid], references: [id])
+  customerid String
+  total      Decimal
+  status     OrderStatus?    @default(Pending)
+  payment    PaymentStatus?  @default(Pending)
+  date       DateTime        @default(now())
+  duedate    DateTime?
+  createdby  String
+  creator    User            @relation("CreatedOrders", fields: [createdby], references: [id])
+  items      OrderItem[]
+  shippingId String
+  shipping   ShippingAddress @relation(fields: [shippingId], references: [id])
+}
+
+model ShippingAddress {
+  id        String  @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String
+  address   String
+  city      String
+  zip       String
+  orders    Order[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  order     Order   @relation(fields: [orderid], references: [id])
+  orderid   String
+  product   Product @relation(fields: [productid], references: [id])
+  productid String
+  quantity  Int
+  price     Decimal
+}
+
+enum Role {
+  Admin
+  Customer
+}
+
+enum Status {
+  Active
+  Inactive
+}
+
+enum ProductStatus {
+  Active
+  Out_of_Stock
+  Discontinued
+}
+
+enum OrderStatus {
+  Pending
+  Processing
+  Delivered
+  Cancelled
+  Shipped
+}
+
+enum PaymentStatus {
+  Processing
+  Cancelled
+  Paid
+  Pending
+  Refunded
+}
